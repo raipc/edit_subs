@@ -1,0 +1,26 @@
+<div class="wrapper-comp-settings is-active editor-with-buttons " id="settings-tab">
+    <ul class="list-input settings-list">
+        <li class="field comp-setting-entry is-set">
+            <div class="wrapper-comp-setting">
+                <label class="label setting-label" for="edit_subs_videos">Video</label>
+                <select class="select setting-input edit_subs_video" id="edit_subs_videos">
+                    <option selected="selected">You must add a videoblock before initializing edit_subs block</option>
+                </select>
+            </div>
+            <span class="tip setting-help">The video the block will work with. Please, don't use the same video in
+                different instances of edit_subs block in one unit.</span>
+        </li>
+    </ul>
+    <div class="xblock-actions">
+        <span class="xblock-editor-error-message"></span>
+        <ul>
+            <li class="action-item">
+                <a href="#" class="button action-primary save-button">{% trans "Save" %}</a>
+            </li>
+
+            <li class="action-item">
+                <a href="#" class="button cancel-button">{% trans "Cancel" %}</a>
+            </li>
+        </ul>
+    </div>
+</div>
