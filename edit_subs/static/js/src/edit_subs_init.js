@@ -1,5 +1,10 @@
 function EditSubsXBlockInit(runtime, element) {
     var initUrl = runtime.handlerUrl(element, 'initialize');
+    var longId = $videoElement.attr('id');
+    var videoId = longId.slice(longId.length - 32);
+
+    var internalSubsId = $videoElement.data('sub');
+    var courseId = longId.slice(10, longId.indexOf("-video"));
 
     var selectElement = $("#edit_subs_videos");
 

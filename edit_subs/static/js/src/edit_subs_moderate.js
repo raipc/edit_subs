@@ -1,7 +1,5 @@
 function EditSubsXBlockAdminView(runtime, element) {
     $('.editsubs-tabs').each(function(){
-        // For each set of tabs, we want to keep track of
-        // which tab is active and it's associated content
         var $active, $content, $links = $(this).find('a');
         $active = $($links.filter('[href="'+location.hash+'"]')[0] || $links[0]);
         $active.addClass('active');

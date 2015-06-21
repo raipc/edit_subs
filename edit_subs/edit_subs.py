@@ -40,6 +40,10 @@ def staff(error_function=lambda: {"error": "Permission denied"}):
         return wrapped
     return wrapper
 
+def resource_string(path):
+    """Handy helper for getting resources from our kit."""
+    data = pkg_resources.resource_string(__name__, path)
+    return data.decode("utf8")
 
 class EditSubsXBlockMixin(object):
     """
@@ -77,26 +81,14 @@ class EditSubsXBlockMixin(object):
         """
         if self.is_course_staff:
             return True
-        return models.user_is_not_banned(self.get_username(), self.course_id)
+        return models.user_is_not_banned(self.username(), self.course_id)
 
-    @property
-    def course_id(self):
-        """
-        Return the course ID if in LMS or None if in Studio
-        Returns:
-            str or None
-        """
-        if hasattr(self, 'xmodule_runtime'):
-            return getattr(self.xmodule_runtime, 'course_id', "test")
-        else:
-            return u"test"
-
-    def get_user_id(self):
+    def user_id(self):
         if hasattr(self, "xmodule_runtime"):
             anonymous_id = self.xmodule_runtime.anonymous_student_id
             return self.xmodule_runtime.get_real_user(anonymous_id).id        
 
-    def get_username(self):
+    def username(self):
         """
         :return: string  current user's nickname
         """
@@ -122,7 +114,7 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
     """
     olx_mode = Boolean(
         default=False, scope=Scope.settings,
-        help="An indicator that the block is created from OLX editor, not Studio"
+        help="An indicator that the block is created from OLX editor"
     )
     initialized = Boolean(
         default=False, scope=Scope.settings,
@@ -157,11 +149,6 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
         default="", scope=Scope.user_state,
         help="Name of the repo to load subtitles from"
     )
-
-    def resource_string(self, path):
-        """Handy helper for getting resources from our kit."""
-        data = pkg_resources.resource_string(__name__, path)
-        return data.decode("utf8")
 
     def student_view(self, context=None):
         """
@@ -226,17 +213,19 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
     def activate(self):
         repos = models.get_repos_list_for_video(self.video_id, self.course_id)
         subs = models.get_sjson_subtitles(self.current_repo_id)
-
+        models.subscribe(self.current_repo_id, self.location, self.user_id())
         return {
             "result": "success",
-            "repos": repos,
-            "subs": subs
+            "data": {
+                "repos": repos,
+                "subs": subs
+            }
         }
 
     def push_update(self):
         notifications_service = self.runtime.service(self, 'notifications')
         msg_type = notifications_service.get_notification_type('open-edx.xblock.edit_subs.subtitle_update')
-        initiator = self.get_username()
+        initiator = self.username()
         msg = NotificationMessage(
             msg_type=msg_type,
             namespace=unicode(self.current_repo_id),
@@ -244,7 +233,7 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
             payload={
                 '_schema_version': 1,
                 'action_username': initiator,
-                'activity_name': 'subtitles_update',
+                'activity_name': 'subtitles_update'
             }
         )
         user_ids = models.get_subscribers(self.current_repo_id)
@@ -254,7 +243,7 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
     def notify_repo_create(self):
         notifications_service = self.runtime.service(self, 'notifications')
         msg_type = notifications_service.get_notification_type('open-edx.xblock.edit_subs.repo_create')
-        initiator = self.get_username()
+        initiator = self.user_id
         msg = NotificationMessage(
             msg_type=msg_type,
             namespace=unicode(self.location),
@@ -262,7 +251,7 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
             payload={
                 '_schema_version': 1,
                 'action_username': initiator,
-                'activity_name': 'subtitles_update',
+                'activity_name': 'subtitles_update'
             }
         )
         user_ids = models.get_subscribers(self.current_repo_id)
@@ -270,7 +259,11 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
             user_ids, msg, exclude_user_ids=[initiator])
 
     def convert_contentstore_subs_to_xblock(self):
-        sjson_subs = Transcript.asset(self.location, self.default_subtitles_id, self.default_subtitles_langs[0])
+        sjson_subs = Transcript.asset(
+            self.location,
+            self.default_subtitles_id,
+            self.default_subtitles_langs[0]
+            )
         return sjson_subs
 
     def save_subtitles_to_contentstore(self, repo_id, lang):
@@ -297,10 +290,10 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
         query = models.add_subtitle(
             text=data["text"],
             start=data["start"],
-            duration=data["duration"],
+            end=data["end"],
             repo_id=self.current_repo,
             course_id=self.course_id,
-            username=self.get_username()
+            username=self.username()
         )
         if query:
             return {"result": "success"}
@@ -312,7 +305,7 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
             name=data["name"],
             description=data["description"],
             course_id=self.course_id,
-            username=self.get_username(),
+            username=self.username(),
             lang_tag=data["lang_tag"]
         )
         if query:
@@ -357,23 +350,11 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
         query = models.ban_user(
             username=data["username"],
             course_id=self.course_id,
-            moderator=self.get_username()
+            moderator=self.username()
         )
         if query:
             return {"result": "success", "data": query}
         return {"result": "error"}
 
     def __del__(self):
-        pass
-
-    @staticmethod
-    def workbench_scenarios():
-        """A canned scenario for display in the workbench."""
-        return [
-            ("EditSubsXBlock",
-             """<vertical_demo>
-                <video/>
-                <edit_subs/>
-                </vertical_demo>
-             """),
-        ]
+        models.unsubscribe(self.user_id(), self.location, self.current_repo_id)

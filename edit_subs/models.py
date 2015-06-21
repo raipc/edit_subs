@@ -60,7 +60,7 @@ class Rating(mongoengine.EmbeddedDocument):
 class Subtitles(mongoengine.Document):
     text = mongoengine.StringField(required=True)
     start = mongoengine.IntField(required=True)
-    duration = mongoengine.IntField(required=True)
+    end = mongoengine.IntField(required=True)
     repo_id = mongoengine.ObjectIdField(required=True)
     course_id = mongoengine.StringField(required=True)
     created = mongoengine.EmbeddedDocumentField(ActionEvent)
@@ -76,17 +76,18 @@ class Subtitles(mongoengine.Document):
         ]
     }
 
-def subscribe(repo_id, location,  username):
-    return NotificationSubscribers.objects.insert(repo_id=repo_id, username=username)
+def subscribe(repo_id, location, user_id):
+    return NotificationSubscribers.objects.insert(repo_id=repo_id, user_id=user_id)
 
-def change_repo_subscribe(username, location, old_repo, new_repo):
+def change_repo_subscribe(user_id, location, old_repo, new_repo):
     return NotificationSubscribers.objects(
-        username=username,
+        user_id=user_id,
         location=location,
         repo=old_repo).update_one(repo=new_repo)
 
-def unsubscribe(user_id, repo_id):
-    user_subscribe = NotificationSubscribers.objects(repo_id=repo_id, user_id=user_id).first()
+def unsubscribe(user_id, location, repo_id):
+    user_subscribe = NotificationSubscribers.objects(
+        repo_id=repo_id, location=location, user_id=user_id).first()
     return user_subscribe.delete()
 
 def get_subscribers(repo_id):
@@ -207,7 +208,7 @@ def get_sjson_subtitles(repo_id):
     return cursor['result']
 
 
-def add_subtitle(text, start, duration, repo_id, video_id, course_id, username):
+def add_subtitle(text, start, end, repo_id, video_id, course_id, username):
     """
     Insert user's subtitle to given repo
 
@@ -231,7 +232,7 @@ def add_subtitle(text, start, duration, repo_id, video_id, course_id, username):
             multi=False,
             text=text,
             start=start,
-            duration=duration,
+            end=end,
             repo_id=repo_id,
             course_id=course_id,
             created=ActionEvent(by=username),
@@ -270,8 +271,9 @@ def _change_current_vote(subtitle_id, username, value):
     if value is 'minus':
         return Subtitles.objects(
             id=subtitle_id,
-            rating__votes__match={"username":username, "value":value}
+            rating__votes__match={"username": username, "value": value}
         ).modify(
+            rating__updated_at=datetime.datetime.now(),
             inc__rating__totalPlus=1,
             inc__rating__total=2,
             dec__rating__totalMinus=1,
@@ -283,6 +285,7 @@ def _change_current_vote(subtitle_id, username, value):
             id=subtitle_id,
             rating__votes__match={"username": username, "value": value}
         ).modify(
+            rating__updated_at=datetime.datetime.now(),
             inc__rating__totalMinus=1,
             dec__rating__total=2,
             dec__rating__totalPlus=1,
@@ -314,6 +317,7 @@ def vote(subtitle_id, username, value):
         )
     if value is 'plus':
         return Subtitles.objects(id=subtitle_id).update(
+            rating__updated_at=datetime.datetime.now(),
             inc__rating__totalPlus=1,
             inc__rating__total=1,
             push__rating__votes=Votes(username=username, value='plus')
