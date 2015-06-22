@@ -58,6 +58,7 @@ function EditSubsXBlock(runtime, element) {
         if (subtitle === false) {
             $subtitleString.text("");
             $subtitleString.data("index", "");
+            return;
         }
         $subtitleString.text(subtitleData.text);
         $subtitleString.data("index", subtitleData.index);
