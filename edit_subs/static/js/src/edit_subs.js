@@ -55,7 +55,7 @@ function EditSubsXBlock(runtime, element) {
 
     function updateSubtitle(event, time){
         var subtitle = subtitleData.showSubtitle(time);
-        if (!subtitle) {
+        if (subtitle === false) {
             $subtitleString.text("");
             $subtitleString.data("index", "");
         }
