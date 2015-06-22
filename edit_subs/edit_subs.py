@@ -116,6 +116,10 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
         default=False, scope=Scope.settings,
         help="An indicator that the block is created from OLX editor"
     )
+    allow_sharing = Boolean(
+        default=False, scope=Scope.settings,
+        help="Can students see and edit repos from other courses?"
+    )
     initialized = Boolean(
         default=False, scope=Scope.settings,
         help="An indicator that the block is ready for work"
