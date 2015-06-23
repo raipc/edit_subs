@@ -1,4 +1,3 @@
-/* CSS for EditSubsXBlock */
 .editsubs-activate{
     position: absolute;
     right:30px;
@@ -99,13 +98,13 @@
     opacity: .8;
     cursor:pointer;
 }
-.editsubs-rate-negative{
+.es-rate-negative{
     background-position: -411px -65px;
     margin-right: 4px;
 }
-.editsubs-rate-positive {
+.es-rate-positive {
     background-position: -470px -31px;
 }
-.editsubs-rated{
+.es-rated{
     opacity:1;
 }
