@@ -20,7 +20,10 @@ import xmodule.video_module.transcripts_utils
 import models
 
 
-def not_banned(error_function=lambda: {"error": "Banned"}):
+def not_banned(error_function=lambda: {
+    "result": "error",
+    "message": "You cannot perform this action as you have been banned"
+    }):
     def wrapper(func):
         def wrapped(self, *args, **kwargs):
             if self.is_not_banned:
@@ -30,7 +33,8 @@ def not_banned(error_function=lambda: {"error": "Banned"}):
         return wrapped
     return wrapper
 
-def staff(error_function=lambda: {"error": "Permission denied"}):
+def staff(error_function=lambda: {"result": "error",
+                                  "message": "Permission denied"}):
     def wrapper(func):
         def wrapped(self, *args, **kwargs):
             if self.user_is_staff:
@@ -222,14 +226,15 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
             "result": "success",
             "data": {
                 "repos": repos,
-                "subs": subs
+                "subs": subs,
+                "current_repo": self.current_repo_id
             }
         }
 
     def push_update(self):
         notifications_service = self.runtime.service(self, 'notifications')
         msg_type = notifications_service.get_notification_type('open-edx.xblock.edit_subs.subtitle_update')
-        initiator = self.username()
+        initiator = self.username
         msg = NotificationMessage(
             msg_type=msg_type,
             namespace=unicode(self.current_repo_id),
