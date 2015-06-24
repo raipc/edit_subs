@@ -1,19 +1,15 @@
 /* Javascript for EditSubsXBlock. */
 function EditSubsXBlock(runtime, element) {
     //var banned = true;
-    var videoId;
     var $videoElement;
-    var $container;
 
     var $activateBtn;
     var $subtitlesBtn;
     var $defSubtitleBtn;
+    var $hideSubtitlesBtn;
     var $subtitleString;
-
-    var $reposDom;
     var changedSubtitleString; //Value before editing
     var isEditingActive = false;
-    var observer;
 
     var repos;
     var currentRepo;
@@ -111,13 +107,8 @@ function EditSubsXBlock(runtime, element) {
     }
 
     function subtitleUpdateHandler(data){
-        if(data.repo_id !== currentRepo)
-            return;
-        if(isEditingActive && data.start === $subtitleString.data("index")){
-            $container.needEvents("deferredUpdate", function(){
-                subtitleUpdateHandler(data);
-            });
-        }
+        if(isEditingActive)
+            return $videoElement.trigger("deferredUpdate", data);
         var index = subtitleData.start.indexOf(data.start);
         if (index < 0) return;
         if (subtitleData.rating[index] > data.rating) return;
@@ -131,7 +122,7 @@ function EditSubsXBlock(runtime, element) {
     }
 
     function repositoriesUpdateHandler(data) {
-        if (!(data.repo_id in repos.repo_id)){
+        if (!data.repo_id in repos.repo_id){
             repos.repo_id.push(data.repo_id);
             repos.repo_name.push(data.repo_name);
             repos.description.push(data.description);
@@ -139,34 +130,19 @@ function EditSubsXBlock(runtime, element) {
         //TODO: Append to DOM
     }
 
-    $.fn.needEvents = function(events){
-        var deferred, $element, elemIndex, eventIndex;
-        events = events.split( /\s+/g );
-        var deferreds = [];
-        for(elemIndex = 0; elemIndex < this.length; elemIndex++){
-            $element = $( this[ elemIndex ] );
-            for (eventIndex = 0; eventIndex < events.length; eventIndex++){
-                deferreds.push(( deferred = $.Deferred() ));
-                $element.one( events[ eventIndex ], deferred.resolve);
-            }
-        }
-        return $.when.apply(null, deferreds);
-    };
-
     $(function ($) {
-        $container = $(".editsubs-container", element);
-        videoId = $container.data("videoid");
+        var $container = $(".editsubs-container", element);
+        var videoId = $container.data("videoid");
         $videoElement = $(".video").filter(function() {
             return $(this).data("metadata").sub === videoId;
         });
         if ($videoElement){
-            $activateBtn = $("<li/>")
-                .attr("class", "editsubs-activate video-download-button")
-                .append($("<a/>").attr("class", "es-activate")
-                        .text("Activate edit_subs module"));
+            $activateBtn = $(".editsubs-activate", element);
             $activateBtn.appendTo($(".wrapper-downloads", $videoElement));
 
+            $hideSubtitlesBtn = $(".hide-subtitles", $videoElement);
             $subtitleString = $(".editsubs-subtitle", $videoElement);
+
             $videoElement.find(".video-player").append($container);
         }
         else
@@ -193,6 +169,8 @@ function EditSubsXBlock(runtime, element) {
                 $subtitlesBtn = $('<a href="#" class="editsubs-hide-subtitles">')
                     .appendTo($defSubtitleBtn.parent());
             }
+            $(this).removeClass("es-deactivated").addClass("es-activated");
+
 
             $(".editsubs-operation-cancel", $videoElement).click(function(){
                 $subtitleString.text(changedSubtitleString);
@@ -207,16 +185,14 @@ function EditSubsXBlock(runtime, element) {
                         "start": subtitleData.start[$subtitleString.data("index")],
                         "end": subtitleData.end[$subtitleString.data("index")]
                     }),
-                    showResult
-                );
-                isEditingActive = false;
+                    function(data){}
+                )
             });
 
             $(".editsubs-string", $videoElement).on('input', function(){
                 if(isEditingActive) return;
                 $subtitleString = $(this);
                 changedSubtitleString = $subtitleString.text();
-                $videoElement.find(".pause").click();
                 isEditingActive = true;
             });
 
@@ -238,13 +214,10 @@ function EditSubsXBlock(runtime, element) {
                 )
             });
 
-
-            /*
-                 Show modal window to create repository. Add handlers to submit-buttons
-             */
             $(".editsubs-repo-create", $videoElement).on("click", function(){
                 var $createRepoForm = $("#editsubs-repo-create-modal");
                 $createRepoForm.leanModal();
+
                 $(".es-repo-create-submit", $createRepoForm).on("click", function(){
                     _requestHelper(
                         "create_repository",
@@ -254,46 +227,26 @@ function EditSubsXBlock(runtime, element) {
                             "lang_tag": $createRepoForm.find("#es-lang-tag").val(),
                             "is_private": $createRepoForm.find("#es-repo-private").is(":checked")
                         },
-                        showResult
+                        function(data){}
                     );
                     $(this).off("click");
                 });
-            });
 
-            /*
-                Show modal window to rate subtitles
-             */
-            $(".editsubs-repo-rate", $videoElement).on("click", function(){
-                var $rateForm = $("#editsubs-rate-modal");
-                $rateForm.leanModal();
-                _requestHelper(
-                    "get_subtitles",
-                    {"repo_id": currentRepo},
-                    function(data){
-                        //TODO: make table
-                    }
-                );
-            });
+                $(".editsubs-repo-rate", $videoElement).on("click", function(){
+                    var $rateForm = $("#editsubs-rate-modal");
+                    $rateForm.leanModal();
 
-            $container.on("subtitleUpdate", function(e, data){
-                subtitleUpdateHandler(data);
-            });
+                    _requestHelper(
+                        "get_subtitles",
+                        {"repo_id": currentRepo},
+                        function(data){
+                            //TODO: make table
+                        }
+                    );
+                });
 
-            $container.on("repoUpdate", function(e, data){
-                repositoriesUpdateHandler(data);
-            });
 
-            observer = new MutationObserver(function() {
-                $container.trigger("deferredUpdate");
             });
-
-            observer.observe($container[0], {
-                "childList": false,
-                "attributes": false,
-                "characterData": true
-            });
-            $(this).text("Dectivate edit_subs module");
-            $(this).removeClass("es-deactivated").addClass("es-activated");
 
         });
 
@@ -312,8 +265,7 @@ function EditSubsXBlock(runtime, element) {
             $(".es-rate-negative:not(.es-rated)", $videoElement).off("click");
             $(".editsubs-repo", $videoElement).off("click");
             $(".editsubs-repo-create", $videoElement).off("click");
-            observer.deactivate();
-            $(this).text("Activate edit_subs module");
+
             $(this).removeClass("es-activated").addClass("es-deactivated");
 
         });

@@ -1,24 +1,21 @@
 <button class="editsubs-show-table">Show adminpanel</button>
-<div class="editsubs-adminview" data-videoid="{{self.video_id}}">
+<div id="editsubs-modal-adminview">
     <ul class='editsubs-tabs'>
-        <li><a href='#editsubs-tab1-{{self.video_id}}'>Current video</a></li>
-        <li><a href='#editsubs-tab2-{{self.video_id}}'>All course</a></li>
-        <li><a href='#editsubs-tab3-{{self.video_id}}'>Repos</a></li>
-        <li><a href='#editsubs-tab4-{{self.video_id}}'>Banned users</a></li>
-        <li><a href='#editsubs-tab5-{{self.video_id}}'>Deleted subtitles</a></li>
+        <li><a href='#editsubs-tab1'>Tab 1</a></li>
+        <li><a href='#editsubs-tab2'>Tab 2</a></li>
+        <li><a href='#editsubs-tab3'>Tab 3</a></li>
     </ul>
 </div>
 
-<div id="editsubs-tab1-{{self.video_id}}">
-    <table class="tablesorter display" cellspacing="0" style="width:auto;">
+<div id="editsubs-tab1">
+    <table class="display" cellspacing="0" style="width:auto;">
         <thead>
         <tr>
             <th>Student</th>
             <th>Repository</th>
             <th>Subtitle</th>
-            <th>Start</th>
+            <th>Start time</th>
             <th>Date</th>
-            <th>Delete</th>
         </tr>
         </thead>
         <tbody>
@@ -26,64 +23,25 @@
     </table>
 </div>
 
-<div id="editsubs-tab2-{{self.video_id}}"><table class="tablesorter display">
+
+<div id="editsubs-tab2"><table class="tablesorter display">
     <thead>
     <tr>
         <th>Student</th>
         <th>Video</th>
         <th>Repository</th>
         <th>Subtitle</th>
-        <th>Start</th>
+        <th>Start time</th>
         <th>Date</th>
         <th>Delete</th>
     </tr>
     </thead>
-    <tbody>
-    </tbody>
 </table>
 </div>
 
-<div id="editsubs-tab3-{{self.video_id}}">
-    <label for="courses">Select course</label>
-    <select name="courses"></select>
-    <label for="repos">Select repo</label>
-    <select name="repos"></select>
-    <button class="es-to-contentstore">Save to contentstore</button>
+<div id="editsubs-tab3">
     <table  class="tablesorter display">
         <thead>
-        <tr>
-            <th>Start</th>
-            <th>Subtitle</th>
-            <th>Student</th>
-            <th>Date</th>
-        </tr>
-        </thead>
-    </table>
-</div>
-
-<div id="editsubs-tab4-{{self.video_id}}">
-    <table  class="tablesorter display">
-        <thead>
-        <tr>
-            <th>Student</th>
-            <th>Moderator</th>
-            <th>Date</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-    </table>
-</div>
-
-<div id="editsubs-tab5-{{self.video_id}}">
-    <table  class="tablesorter display">
-        <thead>
-        <tr>
-            <th>Subtitle</th>
-            <th>Video</th>
-            <th>Repo</th>
-            <th>User</th>
-            <th>Actions</th>
-        </tr>
         </thead>
     </table>
 </div>
