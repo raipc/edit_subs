@@ -326,7 +326,7 @@ class EditSubsXBlock(EditSubsXBlockMixin, XBlock):
         self.current_repo_id = data["repo_id"]
         query = models.get_sjson_subtitles(self.current_repo)
         if query:
-            return {"result": "success", "data": "query"}
+            return {"result": "success", "data": query}
         return {"result": "error"}
 
     @XBlock.json_handler
