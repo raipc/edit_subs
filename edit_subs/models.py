@@ -1,8 +1,8 @@
 import mongoengine
 import datetime
 from collections import OrderedDict
-# mongoengine.connect('edit_subs')
-mongoengine.connect('test')
+mongoengine.connect('edit_subs')
+
 
 class NotificationSubscribers(mongoengine.Document):
     repo_id = mongoengine.ObjectIdField(required=True)
